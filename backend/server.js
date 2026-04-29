@@ -121,7 +121,17 @@ const app = express();
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (Postman, curl, health checks)
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+    if (!origin) return callback(null, true);
+
+    // Allow localhost dev, ngrok tunnels, and Vercel deployments
+    const allowed =
+      origin.startsWith("http://localhost") ||
+      origin.endsWith(".ngrok-free.app") ||
+      origin.endsWith(".ngrok.io") ||
+      origin.endsWith(".vercel.app") ||
+      ALLOWED_ORIGINS.includes(origin);
+
+    if (allowed) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: origin '${origin}' is not allowed`));

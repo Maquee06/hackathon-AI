@@ -6,7 +6,13 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, options);
+  // Merge in headers, adding the localtunnel bypass header
+  const headers = {
+    'Bypass-Tunnel-Reminder': 'true',
+    ...(options.headers || {}),
+  };
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
   if (!res.ok) {
     throw new Error(`API error ${res.status}: ${res.statusText}`);
   }
