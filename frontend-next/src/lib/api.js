@@ -38,3 +38,8 @@ export function resetAppliance(id) {
 export function healthCheck() {
   return request('/health');
 }
+
+/** POST /api/ai/analyze — get AI conservation tips */
+export function analyzeEnergyUsage() {
+  return request('/api/ai/analyze', { method: 'POST' });
+}

@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+import { analyzeEnergyUsage } from '@/lib/api';
 
 export default function AIAdvisor() {
   const [loading, setLoading] = useState(false);
@@ -16,8 +15,7 @@ export default function AIAdvisor() {
     setSource(null);
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/ai/analyze`, { method: 'POST' });
-      const data = await res.json();
+      const data = await analyzeEnergyUsage();
 
       if (data.error) throw new Error(data.message || 'Analysis failed');
 
