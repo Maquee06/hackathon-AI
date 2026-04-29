@@ -185,6 +185,10 @@ app.post("/api/appliances/:id/reset", (req, res) => {
 // Health check
 app.get("/health", (_req, res) => res.json({ ok: true, mock: MOCK }));
 
+// ─── AI Advisor ───────────────────────────────────────────────────────────────
+const aiRoutes = require('./ai-advisor/routes');
+app.use('/api/ai', aiRoutes(appliances.light_bulb));
+
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`

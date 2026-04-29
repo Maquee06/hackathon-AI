@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import ConnectionBar from '@/components/ConnectionBar';
 import ApplianceGrid from '@/components/ApplianceGrid';
+import AIAdvisor from '@/components/AIAdvisor';
 import Toast from '@/components/Toast';
 import { fetchAppliances, toggleAppliance, resetAppliance } from '@/lib/api';
 
@@ -88,6 +89,7 @@ export default function DashboardPage() {
         onToggle={handleToggle}
         onReset={handleReset}
       />
+      <AIAdvisor />
       <Toast message={toastMsg} />
     </>
   );
