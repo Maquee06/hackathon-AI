@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Energy Tracker</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── Design tokens ──────────────────────────────────────────────────── */
+    :root {
+      --bg:           #0a0e14;
+      --surface:      #111820;
+      --surface2:     #182030;
+      --border:       rgba(255,255,255,0.07);
+      --accent-green: #00e5a0;
+      --accent-amber: #ffb340;
+      --accent-red:   #ff4d6a;
+      --text:         #e8edf5;
+      --muted:        #5e7080;
+      --font-mono:    'Space Mono', monospace;
+      --font-sans:    'DM Sans', sans-serif;
+      --radius:       14px;
+      --glow-green:   0 0 40px rgba(0,229,160,0.25);
+      --glow-amber:   0 0 40px rgba(255,179,64,0.25);
+    }
+
+    /* ─── Reset & base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+      overflow-x: hidden;
+    }
+
+    /* ─── Grid background ────────────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: var(--glow-green);
+    }
+
+    h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent-green);
+    }
+
+    .subtitle {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      font-family: var(--font-mono);
+    }
+
+    /* ─── Main card grid ─────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 780px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 580px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Appliance card ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transition: box-shadow 0.4s ease, border-color 0.4s ease;
+    }
+
+    .card.on {
+      border-color: rgba(0,229,160,0.35);
+      box-shadow: var(--glow-green);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .appliance-info { flex: 1; }
+
+    .appliance-name {
+      font-weight: 700;
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      padding: 4px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.3s ease;
+    }
+
+    .badge.on {
+      background: rgba(0,229,160,0.1);
+      border-color: rgba(0,229,160,0.4);
+      color: var(--accent-green);
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .badge.on .badge-dot { animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* Appliance icon area */
+    .appliance-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      transition: all 0.4s ease;
+      flex-shrink: 0;
+    }
+
+    .card.on .appliance-icon {
+      background: rgba(0,229,160,0.1);
+      border-color: rgba(0,229,160,0.3);
+      box-shadow: 0 0 20px rgba(0,229,160,0.2);
+    }
+
+    /* ─── Energy meter ───────────────────────────────────────────────────── */
+    .energy-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .energy-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .energy-value {
+      font-family: var(--font-mono);
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      transition: color 0.3s ease;
+    }
+
+    .energy-value .unit {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+
+    .card.on .energy-value { color: var(--accent-amber); }
+
+    /* Session timer */
+    .session-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .session-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .session-timer {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+
+    .card.on .session-timer { color: var(--accent-amber); }
+
+    /* ─── Toggle button ──────────────────────────────────────────────────── */
+    .btn-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-toggle::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent-green);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .btn-toggle:hover::after { opacity: 0.06; }
+    .btn-toggle:active { transform: scale(0.98); }
+
+    .btn-toggle.on {
+      background: rgba(255,77,106,0.08);
+      border-color: rgba(255,77,106,0.35);
+      color: var(--accent-red);
+    }
+
+    .btn-toggle:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn-toggle .btn-icon { font-size: 1rem; }
+
+    /* Reset button */
+    .btn-reset {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      padding: 4px 0;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      align-self: flex-end;
+    }
+    .btn-reset:hover { color: var(--text); }
+
+    /* ─── Stats bar ──────────────────────────────────────────────────────── */
+    .stats-bar {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 580px) {
+      .stats-bar { grid-column: 1; }
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .stat-val {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* ─── Connection indicator ───────────────────────────────────────────── */
+    .conn-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .conn-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: all 0.3s;
+    }
+
+    .conn-bar.connected .conn-dot {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      animation: pulse 2s infinite;
+    }
+
+    .conn-bar.error .conn-dot { background: var(--accent-red); }
+
+    /* ─── Toast ──────────────────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 10px 20px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-row">
+      <div class="logo-icon">⚡</div>
+      <h1>Smart Energy Tracker</h1>
+    </div>
+    <p class="subtitle">Hackathon Demo · Live Monitoring</p>
+  </header>
+
+  <div class="conn-bar" id="connBar">
+    <div class="conn-dot"></div>
+    <span id="connText">Connecting to backend…</span>
+  </div>
+
+  <!-- Dynamic appliance cards injected here -->
+  <div class="grid" id="applianceGrid">
+
+    <!-- Stats bar (always at end) -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat">
+        <div class="stat-label">Total Energy</div>
+        <div class="stat-val" id="statTotal" style="color:var(--accent-amber)">0.000 <span style="font-size:0.65rem;color:var(--muted)">Wh</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Active Appliances</div>
+        <div class="stat-val" id="statActive" style="color:var(--accent-green)">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Uptime</div>
+        <div class="stat-val" id="statUptime" style="color:var(--muted)">00:00:00</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+// ─── Config ──────────────────────────────────────────────────────────────────
+const API_BASE      = "http://localhost:3001/api";
+const POLL_INTERVAL = 1000;   // ms between API polls
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let appliances      = {};     // id → appliance data
+let sessionStart    = Date.now();
+let uptimeInterval  = null;
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+function fmt(wh)  { return wh.toFixed(3); }
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = String(Math.floor(s / 3600)).padStart(2, "0");
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const sec = String(s % 60).padStart(2, "0");
+  return `${h}:${m}:${sec}`;
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+function setConn(state, text) {
+  const bar = document.getElementById("connBar");
+  bar.className = "conn-bar " + state;
+  document.getElementById("connText").textContent = text;
+}
+
+// ─── Card rendering ───────────────────────────────────────────────────────────
+const ICONS = { light_bulb: "💡", default: "🔌" };
+
+function getIcon(id) { return ICONS[id] || ICONS.default; }
+
+function createCard(a) {
+  const div = document.createElement("div");
+  div.id        = `card-${a.id}`;
+  div.className = "card";
+  div.innerHTML = cardHTML(a);
+  return div;
+}
+
+function cardHTML(a) {
+  const isOn = a.status === "ON";
+  return `
+    <div class="card-header">
+      <div class="appliance-info">
+        <div class="appliance-name">${a.name}</div>
+        <div class="badge ${isOn ? "on" : ""}">
+          <div class="badge-dot"></div>
+          ${isOn ? "ONLINE" : "OFFLINE"}
+        </div>
+      </div>
+      <div class="appliance-icon">${getIcon(a.id)}</div>
+    </div>
+
+    <div class="energy-block">
+      <div class="energy-label">Energy Consumed</div>
+      <div class="energy-value" id="energy-${a.id}">
+        ${fmt(a.energyUsed)}<span class="unit">Wh</span>
+      </div>
+      <div class="session-row">
+        <span class="session-label">Session</span>
+        <span class="session-timer" id="timer-${a.id}">—</span>
+      </div>
+    </div>
+
+    <button
+      class="btn-toggle ${isOn ? "on" : ""}"
+      id="btn-${a.id}"
+      onclick="toggle('${a.id}')"
+    >
+      <span class="btn-icon">${isOn ? "⏹" : "▶"}</span>
+      ${isOn ? "Turn OFF" : "Turn ON"}
+    </button>
+
+    <button class="btn-reset" onclick="resetEnergy('${a.id}')">↺ Reset counter</button>
+  `;
+}
+
+function renderAppliances(list) {
+  const grid   = document.getElementById("applianceGrid");
+  const statsBar = document.getElementById("statsBar");
+
+  list.forEach(a => {
+    appliances[a.id] = a;
+
+    let card = document.getElementById(`card-${a.id}`);
+    if (!card) {
+      card = createCard(a);
+      grid.insertBefore(card, statsBar);
+    } else {
+      // Update card class for glow
+      card.className = `card${a.status === "ON" ? " on" : ""}`;
+      // Re-render inner HTML to sync button/badge
+      card.innerHTML = cardHTML(a);
+    }
+  });
+}
+
+// ─── Stats bar ────────────────────────────────────────────────────────────────
+function updateStats() {
+  const values  = Object.values(appliances);
+  const total   = values.reduce((sum, a) => sum + a.energyUsed, 0);
+  const active  = values.filter(a => a.status === "ON").length;
+
+  document.getElementById("statTotal").innerHTML =
+    `${fmt(total)} <span style="font-size:0.65rem;color:var(--muted)">Wh</span>`;
+  document.getElementById("statActive").textContent = active;
+}
+
+// ─── Session timers (client-side; refreshed each poll) ───────────────────────
+let sessionStarts = {};  // id → timestamp when turned ON (tracked client-side)
+
+function tickTimers() {
+  Object.values(appliances).forEach(a => {
+    const el = document.getElementById(`timer-${a.id}`);
+    if (!el) return;
+
+    if (a.status === "ON") {
+      if (!sessionStarts[a.id]) sessionStarts[a.id] = Date.now();
+      el.textContent = fmtTime(Date.now() - sessionStarts[a.id]);
+    } else {
+      sessionStarts[a.id] = null;
+      el.textContent = "—";
+    }
+  });
+}
+
+// ─── API calls ────────────────────────────────────────────────────────────────
+async function fetchAppliances() {
+  const res  = await fetch(`${API_BASE}/appliances`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function toggle(id) {
+  const btn = document.getElementById(`btn-${id}`);
+  if (btn) btn.disabled = true;
+
+  try {
+    const res  = await fetch(`${API_BASE}/appliances/${id}/toggle`, { method: "POST" });
+    const data = await res.json();
+    appliances[id] = data;
+
+    const card = document.getElementById(`card-${id}`);
+    card.className = `card${data.status === "ON" ? " on" : ""}`;
+    card.innerHTML = cardHTML(data);
+
+    if (data.status === "ON") {
+      sessionStarts[id] = Date.now();
+      toast(`${data.name} turned ON ▶`);
+    } else {
+      sessionStarts[id] = null;
+      toast(`${data.name} turned OFF ⏹`);
+    }
+    updateStats();
+  } catch (err) {
+    toast("⚠ Could not reach backend");
+    console.error(err);
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function resetEnergy(id) {
+  try {
+    const res  = await fetch(`${API_BASE}/appliances/${id}/reset`, { method: "POST" });
+    const data = await res.json();
+    appliances[id] = data;
+    const energyEl = document.getElementById(`energy-${id}`);
+    if (energyEl) energyEl.innerHTML = `${fmt(data.energyUsed)}<span class="unit">Wh</span>`;
+    sessionStarts[id] = data.status === "ON" ? Date.now() : null;
+    updateStats();
+    toast("Energy counter reset");
+  } catch (err) {
+    toast("⚠ Reset failed");
+  }
+}
+
+// ─── Polling loop ─────────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const list = await fetchAppliances();
+    renderAppliances(list);
+    updateStats();
+    setConn("connected", `Backend connected · ${new Date().toLocaleTimeString()}`);
+  } catch (err) {
+    setConn("error", "Backend unreachable — retrying…");
+  }
+}
+
+// ─── Uptime ticker ────────────────────────────────────────────────────────────
+function startUptime() {
+  setInterval(() => {
+    document.getElementById("statUptime").textContent =
+      fmtTime(Date.now() - sessionStart);
+    tickTimers();
+  }, 1000);
+}
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+(async () => {
+  await poll();
+  setInterval(poll, POLL_INTERVAL);
+  startUptime();
+})();
+</script>
+</body>
+</html>
