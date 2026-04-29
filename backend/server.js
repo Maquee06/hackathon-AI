@@ -17,6 +17,10 @@
  */
 
 const express    = require("express");
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",          // Next.js dev server
+  process.env.FRONTEND_URL,        // Production Vercel URL (set via env var)
+].filter(Boolean);
 const cors       = require("cors");
 const { SerialPort } = require("serialport");
 const { ReadlineParser } = require("@serialport/parser-readline");
@@ -114,7 +118,18 @@ function serializeAppliance(a) {
 
 // ─── Express App ─────────────────────────────────────────────────────────────
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (Postman, curl, health checks)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+    }
+  },
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+}));
 app.use(express.json());
 
 // GET /api/appliances — list all appliances
